@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"rexpresence/internal/status"
 	"rexpresence/internal/update"
 )
 
@@ -47,7 +48,25 @@ func standalonePath() string {
 	return ""
 }
 
+// restartWatcher replaces a running watcher with the updated binary. The old
+// watcher's flags are not recorded, so the new one starts with the defaults.
+func restartWatcher(exe string) {
+	if err := stopWatchers(); err != nil {
+		fmt.Fprintln(os.Stderr, "Warning: could not stop the old watcher:", err)
+		return
+	}
+	cmd := exec.Command(exe, "-d")
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "Warning: could not start the updated watcher; run 'rexpresence -d':", err)
+		return
+	}
+	fmt.Println("Restarted with default options. If you used flags, run 'rexpresence stop' and start it again with them.")
+}
+
 func updateCommand() error {
+	pids, _ := status.PIDs()
+	running := len(pids) > 0
 	if paletteExecutable != "" {
 		brew := filepath.Join(filepath.Dir(paletteExecutable), "..", "..", "..", "bin", "brew")
 		cmd := exec.Command(brew, "upgrade", "luqueee/tap/rexpresence")
@@ -55,7 +74,11 @@ func updateCommand() error {
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("Homebrew upgrade failed; try 'brew upgrade luqueee/tap/rexpresence': %w", err)
 		}
-		fmt.Println("Restart rexpresence if it was running to use the updated binary.")
+		if running {
+			restartWatcher(paletteExecutable)
+		} else {
+			fmt.Println("Run 'rexpresence -d' to start sharing with the updated binary.")
+		}
 		return nil
 	}
 	if releaseVersion == "" {
@@ -91,7 +114,10 @@ func updateCommand() error {
 		fmt.Printf("Already up to date: %s (latest stable: %s).\n", releaseVersion, latest)
 		return nil
 	}
-	fmt.Printf("Updated rexpresence from %s to %s. Restart rexpresence if it was running.\n", releaseVersion, latest)
+	fmt.Printf("Updated rexpresence from %s to %s.\n", releaseVersion, latest)
+	if running {
+		restartWatcher(path)
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Warning:", err)
 	}

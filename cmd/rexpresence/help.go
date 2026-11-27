@@ -37,7 +37,7 @@ const helpText = `{rexpresence} - show your Rex activity on Discord
 {Setup}
   setup [remove]        Add or remove the Rex command palette actions
   doctor                Check Rex, Discord and duplicate installs
-  update                Install the latest release
+  update (upgrade)      Install the latest release and restart the watcher
   version               Print the version
 
 {Flags} (run and install)

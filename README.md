@@ -65,7 +65,7 @@ rexpresence stop         # stop the background watcher
 ## Common tasks
 
 - **Start at login (macOS):** run `rexpresence install`. To stop the login service and disable login startup, run `rexpresence uninstall`.
-- **Update:** run `rexpresence update`, then `rexpresence stop` and `rexpresence -d` to restart the watcher. Rerun `rexpresence setup` if you use the Rex menu.
+- **Update:** run `rexpresence update` (or `rexpresence upgrade`). If a watcher is running, it restarts with the new version using default options; rerun it with your flags if you use any. Rerun `rexpresence setup` if you use the Rex menu.
 - **Nothing on Discord?** Keep both desktop apps open. Run `rexpresence doctor` to check the connections, then `rexpresence status` to see whether Discord accepted the activity.
 - **Command not found?** The shell installer puts the binary at `~/.local/bin/rexpresence`. On Windows, the installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
 - **Homebrew warns about `PATH` shadowing?** Another copy may run first. Use `"$(brew --prefix rexpresence)/bin/rexpresence" doctor` to check which one your shell selects.

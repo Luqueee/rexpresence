@@ -37,7 +37,7 @@ func main() {
 	}
 	flag.Usage = func() { printHelp(os.Stderr) }
 	switch command {
-	case "version", "update":
+	case "version", "update", "upgrade":
 		if len(args) != 0 {
 			flag.Usage()
 			os.Exit(2)
