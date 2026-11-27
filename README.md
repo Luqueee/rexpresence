@@ -8,21 +8,27 @@ Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on D
 
 Open Rex and the Discord desktop app. On macOS, `rexpresence` can use the CLI bundled with **Rex.app** or **Rex Beta.app**. On Linux and Windows, put `rex` on `PATH`.
 
-**macOS or Linux** (ARM64 or x86-64):
+**macOS (Homebrew):**
+
+```sh
+brew install luqueee/tap/rexpresence
+```
+
+**Windows x64 (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/Luqueee/rexpresence/main/scripts/install.ps1 | iex
+```
+
+**Linux, or macOS without Homebrew** (ARM64 or x86-64):
 
 ```sh
 curl -fsSL --proto '=https' https://github.com/Luqueee/rexpresence/releases/latest/download/install.sh | sh
 ```
 
-**Windows x64** (PowerShell):
+Homebrew builds the tagged source. The PowerShell and curl commands execute the project's installer and verify the downloaded binary against the release's SHA-256 manifest. None starts sharing or configures login automatically. To install manually instead, download the binary from [GitHub Releases](https://github.com/Luqueee/rexpresence/releases) and check it against `SHA256SUMS`.
 
-```powershell
-& ([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://github.com/Luqueee/rexpresence/releases/latest/download/install.ps1')))
-```
-
-Both commands execute the project's installer and verify the binary against the release's SHA-256 manifest before replacing it. No Go installation, administrator access, or automatic start is required. To avoid executing a downloaded script, install the binary manually from [GitHub Releases](https://github.com/Luqueee/rexpresence/releases) and check it against `SHA256SUMS`.
-
-Run `rexpresence` to start sharing. On Unix the binary is `~/.local/bin/rexpresence`; use that path if the directory isn't on `PATH`. On Windows it is `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`. See **Palette setup** below to add the optional Rex actions.
+Run `rexpresence` to start sharing. With Homebrew, update with `brew upgrade rexpresence`. The curl installer uses `~/.local/bin/rexpresence`; use that path if the directory isn't on `PATH`. The Windows installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
 
 On a local Mac, run without arguments to follow the session selected in Rex. Pass `-session NAME` to pin a session instead. For a remote server, use `-server HOST` with the same host you would pass to `rex -S HOST ls`; specify `-session` if Rex cannot choose between sessions.
 
@@ -62,7 +68,7 @@ The equivalent CLI is `rexpresence card get FIELD`, `rexpresence card set FIELD 
 
 For a read-only preview in the terminal, use `rexpresence card preview line2 '{group}'`. An empty value previews hiding the field; omitting the value previews a reset. Preview uses the watcher's current mode and requires one running watcher. It does not need Discord to be connected.
 
-**Palette setup:** download `rexpresence.lua` from the same release as the binary. Copy it next to your local Rex `init.lua`, add `require("rexpresence")` to that file, and run `rex config reload`. The action uses the installer's per-user binary path on each OS. Install it on the Rex server hosting the session; installing it only on a remote host will not control the local Discord app.
+**Palette setup:** if you installed with Homebrew, use `$(brew --prefix rexpresence)/share/rexpresence/rexpresence.lua`; it points to the Homebrew binary even when the Rex app has a different `PATH`. Otherwise download `rexpresence.lua` from the same release as the binary. Copy the module next to your local Rex `init.lua`, add `require("rexpresence")`, and run `rex config reload`. Install it on the Rex server hosting the session; installing it only on a remote host will not control the local Discord app.
 
 ## Run at login on macOS
 

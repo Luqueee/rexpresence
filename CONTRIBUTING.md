@@ -20,6 +20,8 @@ Run `sh tests/install_unix_test.sh` on Linux or macOS and `.\tests\install_windo
 
 Merge the changes you want to release into `main` and wait for CI. To publish, push a new `vMAJOR.MINOR.PATCH` tag at the tested commit. No tag is needed for a normal pull request or push. The release workflow reruns CI on the tag, cross-compiles the standalone binaries, and publishes them with the Rex Lua action, license notices, and `SHA256SUMS`. It does not deploy anything to users' machines. Do not reuse a published tag.
 
+After publishing a stable tag, update the source URL and SHA-256 in the [Homebrew tap](https://github.com/Luqueee/homebrew-tap/blob/main/Formula/rexpresence.rb). Its macOS CI installs the formula and runs `brew test`.
+
 To build and verify the same assets locally without publishing, run on Linux with Bash, Go, and GNU coreutils:
 
 ```sh
