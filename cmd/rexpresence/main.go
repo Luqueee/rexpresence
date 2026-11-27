@@ -36,7 +36,7 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence run [-d] [flags] | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]\n-d runs the watcher in the background; without it, run stays in the foreground.")
 		flag.PrintDefaults()
 	}
 	switch command {
@@ -142,7 +142,12 @@ func main() {
 			fmt.Println("Login service uninstalled.")
 		}
 		return
-	case "", "install":
+	case "":
+		if len(args) == 0 && !(runtime.GOOS == "darwin" && os.Getppid() == 1) { // launchd runs an older login service without a command
+			flag.Usage()
+			return
+		}
+	case "install", "run":
 	default:
 		flag.Usage()
 		os.Exit(2)
@@ -152,6 +157,7 @@ func main() {
 	server := flag.String("server", "", "Rex server label or address (same as rex -S)")
 	session := flag.String("session", "", "pin a Rex session by name or ID (default on a local Mac: follow the selected session)")
 	project := flag.String("project", "", "optional public project alias shown on Discord")
+	daemon := flag.Bool("d", false, "run the watcher in the background")
 	flag.CommandLine.Parse(args)
 	id, err := strconv.ParseUint(*clientID, 10, 64)
 	if err != nil || id == 0 || strconv.FormatUint(id, 10) != *clientID {
@@ -166,6 +172,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "No positional arguments are accepted. -project must be at most 64 bytes without control characters.")
 		os.Exit(2)
 	}
+	if command == "install" && *daemon {
+		fmt.Fprintln(os.Stderr, "-d is not accepted by install; the login service already runs in the background.")
+		os.Exit(2)
+	}
 	if command == "install" {
 		var options []string
 		if *clientID != defaultClientID {
@@ -175,10 +185,15 @@ func main() {
 			options = append(options, "-"+f.Name+"="+f.Value.String())
 		})
 		check(autostart.Install(options))
-		fmt.Println("Login service installed. Run 'rexpresence status' to check it.")
+		fmt.Println("Login service installed. Open Rex and Discord, then run 'rexpresence status'. No need to start another watcher.")
+		return
+	}
+	if *daemon {
+		check(startBackground(args))
 		return
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	fmt.Fprintln(os.Stderr, "Running in the foreground. Press Ctrl+C to stop.")
 	err = run(ctx, *clientID, *logo, *server, *session, *project)
 	stop()
 	check(err)

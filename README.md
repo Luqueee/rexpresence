@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Luqueee/rexpresence/actions/workflows/ci.yml/badge.svg)](https://github.com/Luqueee/rexpresence/actions/workflows/ci.yml)
 
-Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on Discord, change the card from Rex's command palette, or pause sharing. The group is the label of the Rex session containing the focused pane, not the terminal title. This is an independent integration, not an official Rex or Discord product.
+Show your active [Rex](https://www.superlogical.com/rex) tool and group on your Discord profile. For example, friends see **Shell · Group: Demo Project**. They don't see your terminal title, paths, or command arguments.
 
 ## Demo
 
@@ -12,7 +12,7 @@ Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on D
 
 ## Quick start
 
-Open Rex and the Discord desktop app. On macOS, `rexpresence` can use the CLI bundled with **Rex.app** or **Rex Beta.app**. On Linux and Windows, put `rex` on `PATH`.
+**1. Install rexpresence.** Choose your platform:
 
 **macOS (Homebrew):**
 
@@ -32,102 +32,64 @@ irm https://raw.githubusercontent.com/Luqueee/rexpresence/main/scripts/install.p
 curl -fsSL --proto '=https' https://github.com/Luqueee/rexpresence/releases/latest/download/install.sh | sh
 ```
 
-Homebrew builds the tagged source. The PowerShell and curl commands execute the project's installer and verify the downloaded binary against the release's SHA-256 manifest. None starts sharing or configures login automatically. To install manually instead, download the binary from [GitHub Releases](https://github.com/Luqueee/rexpresence/releases) and check it against `SHA256SUMS`.
+Prefer to install manually? Download your binary and its checksum from [GitHub Releases](https://github.com/Luqueee/rexpresence/releases).
 
-Run `rexpresence` to start sharing. With Homebrew, update with `brew upgrade rexpresence`. The curl installer uses `~/.local/bin/rexpresence`; use that path if the directory isn't on `PATH`. The Windows installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
-
-To add the Discord actions to Rex's command palette, run **`rexpresence setup`** on the machine running Rex and Discord. It shows the files it would change. Press Enter to cancel or type `yes` to install. Setup does not start sharing or enable the login service.
-
-On a local Mac, run without arguments to follow the session selected in Rex. Pass `-session NAME` to pin a session instead. For a remote server, use `-server HOST` with the same host you would pass to `rex -S HOST ls`; specify `-session` if Rex cannot choose between sessions.
-
-The binary includes a public Discord Application ID. To use your own application, pass `-client-id` or set `DISCORD_CLIENT_ID`. The command-line flag takes precedence.
-
-The presence uses the [official Rex icon](https://www.superlogical.com/rex-icon.png) by default; no upload is needed. To change it, pass `-logo` with a public HTTPS image URL, or the key of an image already uploaded to your Discord application's **Rich Presence → Art Assets** (for example, `rexpresence -logo team-logo`). Local files are not uploaded.
-
-By default the **session label is public** in automatic mode (for example, `Shell` and `Group: polished-sierra`). No path, terminal title, command arguments, or repository name is extracted. Use `-project "My project"` to supply a public project alias.
-
-Local Mac selection is checked every three seconds. If Discord restarts, the current activity is restored. Press `Ctrl+C` to stop a foreground run.
-
-## Change your presence from Rex
-
-Open the **local Mac session** in Rex, open its command palette and choose **Discord: Change Presence…**. **Automatic** shows the tool and the session label. **Custom public text** shows only what you enter, without the group. **Pause for 15 minutes** hides the activity and then restores the previous mode, including any custom text. Choosing it again starts a fresh 15 minutes. Changing mode manually cancels the deadline. **Pause indefinitely** stays paused until you explicitly choose a public mode. Canceling the picker changes nothing.
-
-![Rex command palette showing Discord: Configure Card and Discord: Change Presence](docs/screenshots/rex-commands.png)
-
-During a timed pause, reopening the menu shows the minutes left (rounded up). **Resume now** restores the previous mode immediately without asking for your custom text again. Neither the countdown nor this option appears during an indefinite pause.
-
-![Rex presence picker showing 15 minutes left and the Resume now option](docs/screenshots/rex-paused.png)
-
-The same controls are available in the terminal:
+**2. Start sharing.** Open the Discord desktop app and a terminal in Rex. Then run:
 
 ```sh
-rexpresence mode custom "Reviewing a pull request"
-rexpresence pause           # 15 minutes
-rexpresence pause 30m       # or 1h, 1h30m, etc.
-rexpresence mode remaining  # minutes left; 0 when there is no active timed pause
-rexpresence resume          # restore the saved automatic or custom mode now
-rexpresence mode paused
-rexpresence mode auto
+rexpresence -d
 ```
 
-The setting is private to your OS account, applies to all its watchers, and survives restarts. Changes take effect within about a second. Custom text is public on Discord while a pane is active. `rexpresence status` shows the applied mode without printing that text.
+Running `rexpresence -d` starts the watcher in the background and returns to your prompt. Run it again at any time: it reports if the watcher is already running. Running `rexpresence` with no arguments lists the commands. Use `rexpresence status` to check the watcher. To run it in the foreground instead (to see errors), use `rexpresence run`; stop it with `Ctrl+C`.
 
-**Keep a group private:** in **Discord: Change Presence…**, choose **Don't share this group**. It clears the entire Discord activity for that Rex session, even in Custom mode. When the watcher follows you to a public session, your chosen mode still applies, including any manual or timed pause. Choose **Allow sharing this group** to remove the privacy rule without resuming a pause.
+On macOS, rexpresence finds the CLI inside Rex.app and follows the group you select. On Linux and Windows, put `rex` on your `PATH`. You don't need to create a Discord application.
 
-![Discord presence picker with the Don't share this group option](docs/screenshots/rex-privacy.png)
+**3. Add the Rex menu (optional).** Run `rexpresence setup` in another terminal and type `yes` to confirm. Open Rex's command palette in your local Mac session and search for `Discord`.
 
-Privacy applies to this OS account, survives restarts and renaming the Rex session, and does not apply to a different session with the same label. You can set it before starting the watcher: `rexpresence group hide SESSION_ID` (full ID from `rex ls --json`). Use `group get SESSION_ID` to check it or `group show SESSION_ID` to allow sharing again. After upgrading, restart any running watcher and run `rexpresence setup` again to install the updated menu.
+## Control what you share
 
-**Edit the card:** press **Cmd+Shift+P → Discord: Configure Card…**. To show just your Rex group, choose **Bottom line → Rex group name**. Read the result under **Apply change**, then select it to save. **Back** lets you try another option; **Esc** cancels. The preview shows the selected field in the watcher's current mode; it sends nothing to Discord. Changes take effect within about a second after applying, persist across logins, and do not switch modes. **Hide this line** omits a line; **Restore default** resets only the selected field. Discord controls the application name and may display a placeholder when no image is sent.
+- **Pause or resume:** choose **Discord: Change Presence… → Pause for 15 minutes**. Sharing resumes automatically, or you can choose **Resume now**.
+- **Keep a group private:** the group name is public by default. Choose **Don't share this group** to hide the entire activity for that session, even if you rename it.
+- **Show your own message:** choose **Custom public text** instead of showing the tool and group.
+- **Edit the card:** open **Discord: Configure Card…** to change the text, logo, or timer. Preview the result, then choose **Apply change**.
 
-![Rex preview showing Demo Project on the bottom line before applying the change](docs/screenshots/rex-card.png)
-
-Choose **Custom text or template…** to enter your own wording. Use literal text or placeholders: `{tool}` (foreground tool), `{group}` (session label), `{project}` (explicit project alias), or `{activity}` (tool plus alias if set). For example, `In {group}` adds a prefix. A line that depends on an unavailable value is omitted. Automatic templates never expand in custom mode; logo and timer preferences apply to both modes.
-
-The equivalent CLI is `rexpresence card get FIELD`, `rexpresence card set FIELD VALUE`, or `rexpresence card reset FIELD`, with fields `line1`, `line2`, `logo`, and `timer`. The timer accepts `on` or `off`. The logo accepts an HTTPS image URL, a Discord asset key, an empty value, or `{default}` to use the startup `-logo`.
-
-For a read-only preview in the terminal, use `rexpresence card preview line2 '{group}'`. An empty value previews hiding the field; omitting the value previews a reset. Preview uses the watcher's current mode and requires one running watcher. It does not need Discord to be connected.
-
-`rexpresence setup` uses the local Rex configuration (`REX_CONFIG` if set), installs the bundled module next to it, validates the configuration and asks the running Rex server to reload it. Run it again after upgrading to update the actions; an unchanged installation is left alone. If Rex was closed during setup, open it to load the new configuration.
-
-Setup keeps a backup before replacing an existing palette module and refuses to replace a symlink. If you manage `init.lua` through a dotfiles symlink, point `REX_CONFIG` at the real file and use the same config path for the Rex server.
-
-Run `rexpresence setup remove` to preview and remove the palette, then reload Rex. It leaves the watcher, login service, Discord settings, and backups alone. It keeps edited or pre-existing Lua modules and only removes the exact `require` line marked by setup. Releases through v0.2.0 did not mark that line: if you used an older release or installed manually, remove its `require("rexpresence")` from your Rex config yourself, then reload Rex.
-
-## Run at login on macOS
-
-Keep the binary in a permanent location such as `~/.local/bin/rexpresence`. Stop any foreground copy with `Ctrl+C`, then run:
+You can also use the terminal:
 
 ```sh
-~/.local/bin/rexpresence install    # start now and at login
-~/.local/bin/rexpresence status     # inspect the watcher without changing your presence
-~/.local/bin/rexpresence uninstall  # stop the login service and remove it
+rexpresence pause 30m    # hide your activity for 30 minutes
+rexpresence resume       # end a timed pause early
+rexpresence status       # see what the watcher is doing
 ```
 
-`install` accepts the same flags as a foreground run (e.g. `install -session work`). No `sudo` is needed. `status` distinguishes installation from a running watcher, names the session Rex actually selected, and reports whether Discord acknowledged the latest activity. An acknowledgement is not proof that other Discord users can see your profile.
+## Common tasks
 
-## Check for updates
+- **Start at login (macOS):** run `rexpresence install`. To stop the login service and disable login startup, run `rexpresence uninstall`.
+- **Update:** run `rexpresence update`, restart the watcher, and rerun `rexpresence setup` if you use the Rex menu.
+- **Nothing on Discord?** Keep both desktop apps open. Run `rexpresence doctor` to check the connections, then `rexpresence status` to see whether Discord accepted the activity.
+- **Command not found?** The shell installer puts the binary at `~/.local/bin/rexpresence`. On Windows, the installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
+- **Homebrew warns about `PATH` shadowing?** Another copy may run first. Use `"$(brew --prefix rexpresence)/bin/rexpresence" doctor` to check which one your shell selects.
 
-Run `rexpresence version` to print the version of the executable you opened. A source build reports `devel`; `rexpresence doctor` also shows its path.
+<details>
+<summary>Advanced: sessions, privacy, and card settings</summary>
 
-Run `rexpresence update` to update that installation. Homebrew builds delegate to `brew upgrade luqueee/tap/rexpresence`. The standalone installer location uses the latest stable GitHub release and verifies the binary against that release's `SHA256SUMS` before replacing it. It does not downgrade, rewrite settings, or restart the watcher. Restart a running watcher yourself after an update. On Windows, close the watcher and retry if it prevents replacement.
+**Choose a session.** Run `rexpresence -session NAME` to pin one group. For a remote server, add `-server HOST` using the same host as `rex -S HOST ls`. Add `-project "My project"` only if you want to share that alias publicly.
 
-If your current release predates these commands, rerun the installer you originally used once. For a development build or a standalone binary outside the installer location, rebuild or replace it manually.
+**Privacy from the CLI.** Find the session ID with `rex ls --json`. Run `rexpresence group hide SESSION_ID` to hide it, `group get SESSION_ID` to check, or `group show SESSION_ID` to allow it again. Allowing a group does not end a pause. These settings belong to your OS account and survive restarts.
 
-## Troubleshooting
+**Sharing modes.** Use `rexpresence mode custom "Reviewing a pull request"` for public text, `rexpresence mode paused` for an indefinite pause, or `rexpresence mode auto` to show the tool and group again. `rexpresence pause` defaults to 15 minutes; `rexpresence mode remaining` reports the time left.
 
-Run `rexpresence doctor` to see which copy of the CLI you are running, which copy `PATH` selects when multiple installations are found, whether the **running local Rex server** loaded both Discord palette actions, and whether Discord's desktop IPC is reachable. It checks `PATH` and the standard installer and Homebrew locations; it does not run or compare the versions of other copies.
+**Card fields.** Use `rexpresence card get FIELD`, `card set FIELD VALUE`, or `card reset FIELD` with `line1`, `line2`, `logo`, or `timer`. Text templates support `{tool}`, `{group}`, `{project}`, and `{activity}`. For example, `rexpresence card preview line2 'In {group}'` previews a change without publishing it. A preview needs a running watcher.
 
-`doctor` does not edit files, start services, reload Rex, or send or clear Discord activity. A reachable socket does not prove Discord accepted or is showing your presence; use `rexpresence status` to check the watcher's last acknowledgement. `doctor` exits with status 1 if either connection check fails. The palette and a single installation are optional.
+**Logo and app name.** The [Rex icon](https://www.superlogical.com/rex-icon.png) is the default. Use `-logo` with a public HTTPS image URL or a Discord art asset key. Discord controls the app name; use `-client-id` or `DISCORD_CLIENT_ID` to select your own application.
+
+**Remove the menu.** Run `rexpresence setup remove`. This leaves the watcher and login service alone. For a symlinked Rex config, set `REX_CONFIG` to the real file before running setup. For a manual setup or a release through v0.2.0, remove the unmarked `require("rexpresence")` from your Rex config yourself.
+
+</details>
 
 ## Development
 
-`cmd/rexpresence` contains the CLI. `internal/rex` watches the focused pane; `internal/discord` manages the IPC connection. Run the black-box tests in `tests/` with `go test ./tests`.
-
-To build from source instead of installing a release, use `go build -o rexpresence ./cmd/rexpresence` (on Windows, `-o rexpresence.exe`).
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local checks, bug reports, and the tag-based release process.
+Build with `go build -o rexpresence ./cmd/rexpresence` and run the tests with `go test ./tests`. See [Contributing](CONTRIBUTING.md) for prerequisites, checks, and releases.
 
 ## License and attribution
 
-[BSD-4-Clause](LICENSE). If you advertise features or use of redistributed rexpresence software, include this acknowledgement: **This product includes software developed by the rexpresence contributors.** The license does not require you to advertise. The Rex icon is referenced from its official URL; this project's license does not grant rights to the icon or third-party trademarks.
+[BSD-4-Clause](LICENSE). This product includes software developed by the rexpresence contributors. This is an independent integration, not an official Rex or Discord product. The license does not grant rights to third-party icons or trademarks.

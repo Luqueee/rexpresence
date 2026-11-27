@@ -54,11 +54,15 @@ try {
         }
     } catch {
         Write-Warning "Installed the binary, but could not update user PATH: $_"
-        Write-Host "Run it directly: & '$destination'"
-        return
+        # The absolute commands below also work without PATH.
     }
-    Write-Host "Installed $destination. Run rexpresence when ready."
-    Write-Host 'Run rexpresence setup to add the optional Rex palette actions.'
+    Write-Host "Installed $destination. Open Discord and a terminal in Rex."
+    Write-Host 'Check for a running watcher:'
+    Write-Host '  & "$env:LOCALAPPDATA\Programs\rexpresence\rexpresence.exe" status'
+    Write-Host 'Start sharing in the background (safe to run again):'
+    Write-Host '  & "$env:LOCALAPPDATA\Programs\rexpresence\rexpresence.exe" -d'
+    Write-Host 'Optional: add Discord controls to the Rex command palette:'
+    Write-Host '  & "$env:LOCALAPPDATA\Programs\rexpresence\rexpresence.exe" setup'
 } finally {
     if ([IO.File]::Exists($staged)) { [IO.File]::Delete($staged) }
     if ([IO.File]::Exists($sumsFile)) { [IO.File]::Delete($sumsFile) }

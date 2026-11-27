@@ -63,5 +63,10 @@ case ":${PATH:-}:" in
   *":$bin:"*) ;;
   *) printf '%s\n' 'Add this directory to PATH in your shell configuration:' '  export PATH="$HOME/.local/bin:$PATH"' ;;
 esac
-printf '%s\n' 'Run rexpresence to start sharing. Run rexpresence setup to add the optional Rex palette actions.'
+printf '%s\n' 'Open Discord and a terminal in Rex. Check for a running watcher:' \
+  '  "$HOME/.local/bin/rexpresence" status' \
+  'Start sharing in the background (safe to run again):' \
+  '  "$HOME/.local/bin/rexpresence" -d' \
+  'Optional: add Discord controls to the Rex command palette:' \
+  '  "$HOME/.local/bin/rexpresence" setup'
 )
