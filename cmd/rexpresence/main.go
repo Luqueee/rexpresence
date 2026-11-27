@@ -35,10 +35,7 @@ func main() {
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		command, args = args[0], args[1:]
 	}
-	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence run [-d] [flags] | stop | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]\n-d runs the watcher in the background; without it, run stays in the foreground.")
-		flag.PrintDefaults()
-	}
+	flag.Usage = func() { printHelp(os.Stderr) }
 	switch command {
 	case "version", "update":
 		if len(args) != 0 {
@@ -149,9 +146,12 @@ func main() {
 			fmt.Println("Login service uninstalled.")
 		}
 		return
+	case "help":
+		printHelp(os.Stdout)
+		return
 	case "":
 		if len(args) == 0 && !(runtime.GOOS == "darwin" && os.Getppid() == 1) { // launchd runs an older login service without a command
-			flag.Usage()
+			printHelp(os.Stdout)
 			return
 		}
 	case "install", "run":
