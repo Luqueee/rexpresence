@@ -36,16 +36,17 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | setup | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | setup [remove] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
 		flag.PrintDefaults()
 	}
 	switch command {
 	case "setup":
-		if len(args) != 0 {
+		remove := len(args) == 1 && args[0] == "remove"
+		if len(args) != 0 && !remove {
 			flag.Usage()
 			os.Exit(2)
 		}
-		check(setupPalette())
+		check(setupPalette(remove))
 		return
 	case "pause":
 		d := 15 * time.Minute
@@ -144,26 +145,38 @@ func main() {
 	check(err)
 }
 
-func setupPalette() error {
-	path, validate, reload, err := rex.ConfigForSetup()
+func setupPalette(remove bool) error {
+	path, validate, reload, err := rex.ConfigForSetup(remove)
 	if err != nil {
 		return err
 	}
-	exe := paletteExecutable
-	if exe == "" {
-		exe, err = os.Executable()
-		if err != nil {
-			return err
+	var changed bool
+	if remove {
+		changed, err = setup.Remove(path, os.Stdin, os.Stdout, validate)
+	} else {
+		exe := paletteExecutable
+		if exe == "" {
+			exe, err = os.Executable()
+			if err != nil {
+				return err
+			}
 		}
+		changed, err = setup.Install(path, palette.Module(exe), os.Stdin, os.Stdout, validate)
 	}
-	changed, err := setup.Install(path, palette.Module(exe), os.Stdin, os.Stdout, validate)
-	if err != nil || !changed {
+	if !changed {
 		return err
 	}
-	if err := reload(); err != nil {
-		return fmt.Errorf("palette files installed; open Rex locally and run 'rex config reload': %w", err)
+	if reloadErr := reload(); reloadErr != nil {
+		return errors.Join(err, fmt.Errorf("palette files changed; open Rex locally and run 'rex config reload': %w", reloadErr))
 	}
-	fmt.Println("Palette ready. Open Rex's command palette and select Discord: Change Presence…")
+	if err != nil {
+		return err
+	}
+	if remove {
+		fmt.Println("Palette removed.")
+	} else {
+		fmt.Println("Palette ready. Open Rex's command palette and select Discord: Change Presence…")
+	}
 	return nil
 }
 

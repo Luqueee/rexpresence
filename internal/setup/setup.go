@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const managedRequire = `require("rexpresence") -- rexpresence setup`
+
 type fileState struct {
 	data []byte
 	info os.FileInfo
@@ -64,6 +66,42 @@ func atomicWrite(path string, data []byte, mode os.FileMode) error {
 		return err
 	}
 	return os.Rename(name, path)
+}
+
+func confirm(in io.Reader, out io.Writer) (bool, error) {
+	if _, err := fmt.Fprint(out, "Proceed? [y/N] "); err != nil {
+		return false, err
+	}
+	answer, err := bufio.NewReader(in).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return false, err
+	}
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	return answer == "y" || answer == "yes", nil
+}
+
+func validateDraft(dir string, data []byte, validate func(string) error) error {
+	if validate == nil {
+		return nil
+	}
+	f, err := os.CreateTemp(dir, ".rexpresence-init-*.lua")
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(data)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
+	if err == nil {
+		err = validate(f.Name())
+	}
+	if removeErr := os.Remove(f.Name()); err == nil {
+		err = removeErr
+	}
+	if err != nil {
+		return fmt.Errorf("validating configuration: %w", err)
+	}
+	return nil
 }
 
 // luaTokens ignores comments and long strings so their contents cannot mimic a require.
@@ -142,15 +180,7 @@ func longStringEnd(src []byte, start int) (int, bool) {
 }
 
 func hasRequire(src []byte) bool {
-	// A Unix shebang is ignored by Lua but is not a Lua comment.
-	s := bytes.TrimPrefix(src, []byte("\xef\xbb\xbf"))
-	if bytes.HasPrefix(s, []byte("#!")) {
-		if n := bytes.IndexByte(s, '\n'); n >= 0 {
-			s = s[n+1:]
-		} else {
-			s = nil
-		}
-	}
+	s := src[configStart(src):]
 	t := luaTokens(s)
 	for i := range t {
 		if t[i] != "require" || i > 0 && (t[i-1] == "." || t[i-1] == ":") {
@@ -168,27 +198,32 @@ func hasRequire(src []byte) bool {
 	return false
 }
 
+// configStart skips the optional BOM and Unix shebang.
+func configStart(src []byte) int {
+	pos := 0
+	if bytes.HasPrefix(src, []byte("\xef\xbb\xbf")) {
+		pos = 3
+	}
+	if bytes.HasPrefix(src[pos:], []byte("#!")) {
+		if n := bytes.IndexByte(src[pos:], '\n'); n >= 0 {
+			return pos + n + 1
+		}
+		return len(src)
+	}
+	return pos
+}
+
 func addRequire(src []byte) []byte {
 	newline := "\n"
 	if bytes.Contains(src, []byte("\r\n")) {
 		newline = "\r\n"
 	}
-	pos := 0
-	if bytes.HasPrefix(src, []byte("\xef\xbb\xbf")) {
-		pos = 3
-	}
+	pos := configStart(src)
 	prefix := append([]byte(nil), src[:pos]...)
-	if bytes.HasPrefix(src[pos:], []byte("#!")) {
-		if n := bytes.IndexByte(src[pos:], '\n'); n >= 0 {
-			pos += n + 1
-			prefix = append(prefix, src[len(prefix):pos]...)
-		} else {
-			prefix = append(prefix, src[pos:]...)
-			prefix = append(prefix, newline...)
-			pos = len(src)
-		}
+	if pos == len(src) && bytes.HasPrefix(bytes.TrimPrefix(src, []byte("\xef\xbb\xbf")), []byte("#!")) && src[pos-1] != '\n' {
+		prefix = append(prefix, newline...)
 	}
-	prefix = append(prefix, []byte("require(\"rexpresence\")"+newline)...)
+	prefix = append(prefix, managedRequire+newline...)
 	return append(prefix, src[pos:]...)
 }
 
@@ -216,6 +251,9 @@ func Install(initPath string, module []byte, in io.Reader, out io.Writer, valida
 	}
 	if initial.info != nil && installed.info != nil && os.SameFile(initial.info, installed.info) {
 		return false, fmt.Errorf("init and module paths refer to the same file")
+	}
+	if installed.info == nil || isManagedModule(installed.data) {
+		module = append(moduleHeader(module), module...)
 	}
 	newInit := initial.data
 	if !hasRequire(newInit) {
@@ -274,15 +312,8 @@ func Install(initPath string, module []byte, in io.Reader, out io.Writer, valida
 			return false, err
 		}
 	}
-	if _, err = fmt.Fprint(out, "Proceed? [y/N] "); err != nil {
+	if ok, err := confirm(in, out); err != nil || !ok {
 		return false, err
-	}
-	answer, readErr := bufio.NewReader(in).ReadString('\n')
-	if readErr != nil && !errors.Is(readErr, io.EOF) {
-		return false, readErr
-	}
-	if a := strings.ToLower(strings.TrimSpace(answer)); a != "y" && a != "yes" {
-		return false, nil
 	}
 	if err = unchanged(initPath, initial); err != nil {
 		return false, err
@@ -360,25 +391,8 @@ func Install(initPath string, module []byte, in io.Reader, out io.Writer, valida
 	if err = unchanged(initPath, initial); err != nil {
 		return false, rollback(err)
 	}
-	if validate != nil {
-		f, e := os.CreateTemp(filepath.Dir(initPath), ".rexpresence-init-*.lua")
-		if e != nil {
-			return false, rollback(e)
-		}
-		name := f.Name()
-		_, e = f.Write(newInit)
-		if closeErr := f.Close(); e == nil {
-			e = closeErr
-		}
-		if e == nil {
-			e = validate(name)
-		}
-		if removeErr := os.Remove(name); e == nil {
-			e = removeErr
-		}
-		if e != nil {
-			return false, rollback(fmt.Errorf("validating configuration: %w", e))
-		}
+	if err = validateDraft(dir, newInit, validate); err != nil {
+		return false, rollback(err)
 	}
 	if moduleWritten {
 		if err = unchanged(modulePath, writtenState); err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 // ConfigForSetup locates the local Rex CLI and its configuration without running either.
-func ConfigForSetup() (path string, validate func(string) error, reload func() error, err error) {
+func ConfigForSetup(remove bool) (path string, validate func(string) error, reload func() error, err error) {
 	c, err := findCLI()
 	if err != nil {
 		return "", nil, nil, fmt.Errorf("find Rex CLI: %w", err)
@@ -59,7 +59,11 @@ func ConfigForSetup() (path string, validate func(string) error, reload func() e
 				card = true
 			}
 		}
-		if !presence || !card {
+		if remove {
+			if presence || card {
+				return fmt.Errorf("the config still loads rexpresence actions; check for another reference to the palette")
+			}
+		} else if !presence || !card {
 			return fmt.Errorf("Rex config did not load both rexpresence actions; ensure require(\"rexpresence\") runs unconditionally and the server uses this config (check its --config option)")
 		}
 		return nil

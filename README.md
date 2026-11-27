@@ -74,6 +74,8 @@ For a read-only preview in the terminal, use `rexpresence card preview line2 '{g
 
 Setup keeps a backup before replacing an existing palette module and refuses to replace a symlink. If you manage `init.lua` through a dotfiles symlink, point `REX_CONFIG` at the real file and use the same config path for the Rex server.
 
+Run `rexpresence setup remove` to preview and remove the palette, then reload Rex. It leaves the watcher, login service, Discord settings, and backups alone. It keeps edited or pre-existing Lua modules and only removes the exact `require` line marked by setup. Releases through v0.2.0 did not mark that line: if you used an older release or installed manually, remove its `require("rexpresence")` from your Rex config yourself, then reload Rex.
+
 ## Run at login on macOS
 
 Keep the binary in a permanent location such as `~/.local/bin/rexpresence`. Stop any foreground copy with `Ctrl+C`, then run:

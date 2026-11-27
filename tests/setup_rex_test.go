@@ -22,7 +22,9 @@ printf 'arg=%s\n' "$@" >> "$SETUP_LOG"
 printf 'server=%s\nhome=%s\n' "$REX_SERVER" "$REX_HOME" >> "$SETUP_LOG"
 if [ "$SETUP_FAIL" = 1 ]; then echo 'private config contents' >&2; exit 1; fi
 if [ "$3" = check ]; then
-  if [ "$SETUP_MISSING" = 1 ]; then
+  if [ "$SETUP_MISSING" = all ]; then
+    printf '%s\n' '{"actions":[{"name":"other"}]}'
+  elif [ "$SETUP_MISSING" = 1 ]; then
     printf '%s\n' '{"actions":[{"name":"discord_change_presence"}]}'
   else
     printf '%s\n' '{"actions":[{"name":"discord_change_presence"},{"name":"discord_configure_card"}]}'
@@ -40,7 +42,7 @@ fi
 	t.Setenv("REX_SERVER", "remote.example:1234")
 	t.Setenv("REX_HOME", "remote.example:1234")
 
-	path, validate, reload, err := rex.ConfigForSetup()
+	path, validate, reload, err := rex.ConfigForSetup(false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,18 +70,29 @@ fi
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "xdg"))
-	path, _, _, err = rex.ConfigForSetup()
+	path, _, _, err = rex.ConfigForSetup(false)
 	if err != nil || path != filepath.Join(dir, "xdg", "rex", "init.lua") {
 		t.Fatalf("XDG path = %q, error = %v", path, err)
 	}
 	t.Setenv("REX_CONFIG", filepath.Join(dir, "custom.lua"))
-	path, validate, reload, err = rex.ConfigForSetup()
+	path, validate, reload, err = rex.ConfigForSetup(false)
 	if err != nil || path != filepath.Join(dir, "custom.lua") {
 		t.Fatalf("override path = %q, error = %v", path, err)
 	}
 	t.Setenv("SETUP_MISSING", "1")
 	if err := validate(file); err == nil || !strings.Contains(err.Error(), "require(\"rexpresence\")") {
 		t.Fatalf("missing action error = %v", err)
+	}
+	_, validateRemoval, _, err := rex.ConfigForSetup(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateRemoval(file); err == nil || !strings.Contains(err.Error(), "still loads") {
+		t.Fatalf("remaining action error = %v", err)
+	}
+	t.Setenv("SETUP_MISSING", "all")
+	if err := validateRemoval(file); err != nil {
+		t.Fatal(err)
 	}
 	t.Setenv("SETUP_MISSING", "")
 	t.Setenv("SETUP_FAIL", "1")
@@ -105,18 +118,18 @@ func TestRexConfigForSetupWindows(t *testing.T) {
 	t.Setenv("PATH", dir)
 	t.Setenv("REX_CONFIG", "")
 	t.Setenv("APPDATA", filepath.Join(dir, "roaming"))
-	path, _, _, err := rex.ConfigForSetup()
+	path, _, _, err := rex.ConfigForSetup(false)
 	if err != nil || path != filepath.Join(dir, "roaming", "rex", "init.lua") {
 		t.Fatalf("AppData path = %q, error = %v", path, err)
 	}
 	t.Setenv("REX_CONFIG", filepath.Join(dir, "custom.lua"))
-	path, _, _, err = rex.ConfigForSetup()
+	path, _, _, err = rex.ConfigForSetup(false)
 	if err != nil || path != filepath.Join(dir, "custom.lua") {
 		t.Fatalf("override path = %q, error = %v", path, err)
 	}
 	t.Setenv("REX_CONFIG", "")
 	t.Setenv("APPDATA", "")
-	if _, _, _, err = rex.ConfigForSetup(); err == nil {
+	if _, _, _, err = rex.ConfigForSetup(false); err == nil {
 		t.Fatal("missing APPDATA accepted")
 	}
 }

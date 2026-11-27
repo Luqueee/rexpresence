@@ -12,6 +12,8 @@ import (
 	"rexpresence/internal/setup"
 )
 
+const setupRequire = `require("rexpresence") -- rexpresence setup`
+
 func TestSetupDeclineAndIdempotency(t *testing.T) {
 	dir := t.TempDir()
 	init := filepath.Join(dir, "init.lua")
@@ -30,7 +32,7 @@ func TestSetupDeclineAndIdempotency(t *testing.T) {
 			t.Error(err)
 		}
 		data, err := os.ReadFile(path)
-		if err != nil || string(data) != "require(\"rexpresence\")\nreturn {}\n" {
+		if err != nil || string(data) != setupRequire+"\nreturn {}\n" {
 			t.Errorf("prospective init: %q, %v", data, err)
 		}
 		return nil
@@ -102,9 +104,9 @@ func TestSetupRecognizesRequiresAndIgnoresComments(t *testing.T) {
 		{"single quote", "local x = require 'rexpresence'\n", "local x = require 'rexpresence'\n"},
 		{"long string", "require [[rexpresence]]\n", "require [[rexpresence]]\n"},
 		{"parentheses with comment", "require -- comment\n ( \"rexpresence\" )\n", "require -- comment\n ( \"rexpresence\" )\n"},
-		{"comments and strings", "-- require('rexpresence')\n--[=[require \"rexpresence\"]=]\nlocal x = \"require('rexpresence')\"\nreturn {}\n", "require(\"rexpresence\")\n-- require('rexpresence')\n--[=[require \"rexpresence\"]=]\nlocal x = \"require('rexpresence')\"\nreturn {}\n"},
-		{"bom shebang crlf", "\xef\xbb\xbf#!/usr/bin/lua\r\nreturn {}\r\n", "\xef\xbb\xbf#!/usr/bin/lua\r\nrequire(\"rexpresence\")\r\nreturn {}\r\n"},
-		{"field call", "other.require('rexpresence')\n", "require(\"rexpresence\")\nother.require('rexpresence')\n"},
+		{"comments and strings", "-- require('rexpresence')\n--[=[require \"rexpresence\"]=]\nlocal x = \"require('rexpresence')\"\nreturn {}\n", setupRequire + "\n-- require('rexpresence')\n--[=[require \"rexpresence\"]=]\nlocal x = \"require('rexpresence')\"\nreturn {}\n"},
+		{"bom shebang crlf", "\xef\xbb\xbf#!/usr/bin/lua\r\nreturn {}\r\n", "\xef\xbb\xbf#!/usr/bin/lua\r\n" + setupRequire + "\r\nreturn {}\r\n"},
+		{"field call", "other.require('rexpresence')\n", setupRequire + "\nother.require('rexpresence')\n"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
