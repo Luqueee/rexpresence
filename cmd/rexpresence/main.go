@@ -15,14 +15,19 @@ import (
 	"time"
 	"unicode"
 
+	palette "rexpresence/integrations/rex"
 	"rexpresence/internal/autostart"
 	"rexpresence/internal/discord"
 	"rexpresence/internal/presence"
 	"rexpresence/internal/rex"
+	"rexpresence/internal/setup"
 	"rexpresence/internal/status"
 )
 
 const defaultClientID = "1575562044294570255"
+
+// Homebrew sets this to its stable opt path so the palette survives upgrades.
+var paletteExecutable string
 
 func main() {
 	command := ""
@@ -31,10 +36,17 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | setup | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
 		flag.PrintDefaults()
 	}
 	switch command {
+	case "setup":
+		if len(args) != 0 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		check(setupPalette())
+		return
 	case "pause":
 		d := 15 * time.Minute
 		if len(args) > 1 {
@@ -130,6 +142,29 @@ func main() {
 	err = run(ctx, *clientID, *logo, *server, *session, *project)
 	stop()
 	check(err)
+}
+
+func setupPalette() error {
+	path, validate, reload, err := rex.ConfigForSetup()
+	if err != nil {
+		return err
+	}
+	exe := paletteExecutable
+	if exe == "" {
+		exe, err = os.Executable()
+		if err != nil {
+			return err
+		}
+	}
+	changed, err := setup.Install(path, palette.Module(exe), os.Stdin, os.Stdout, validate)
+	if err != nil || !changed {
+		return err
+	}
+	if err := reload(); err != nil {
+		return fmt.Errorf("palette files installed; open Rex locally and run 'rex config reload': %w", err)
+	}
+	fmt.Println("Palette ready. Open Rex's command palette and select Discord: Change Presence…")
+	return nil
 }
 
 func check(err error) {

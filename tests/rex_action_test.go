@@ -1,10 +1,13 @@
 package integration_test
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	palette "rexpresence/integrations/rex"
 )
 
 func TestRexPresenceAction(t *testing.T) {
@@ -24,7 +27,7 @@ rex = {
   exec = setmetatable({}, { __call = function(_, argv)
     if argv[3] == "remaining" then return { ok = true, stdout = remaining } end
     calls = calls + 1
-    assert(argv[1] == os.getenv("HOME") .. "/.local/bin/rexpresence")
+    assert(argv[1] == arg[2])
     if picked == "pause" or picked == "resume" then
       assert(argv[2] == picked and argv[3] == nil)
     else
@@ -85,7 +88,7 @@ local commands, answers, prompts = {}, {}, {}
 local current = "  current value  \n"
 local preview = "Mode: auto\nTop line: resolved group\nBottom line: resolved project\nLogo: default\nTimer: running\n"
 rex.exec = function(argv)
-  assert(argv[1] == os.getenv("HOME") .. "/.local/bin/rexpresence")
+  assert(argv[1] == arg[2])
   assert(argv[2] == "card")
   commands[#commands + 1] = argv
   return { ok = true, code = 0, stdout = argv[3] == "preview" and preview or current }
@@ -190,9 +193,16 @@ assert(not ok and not string.find(err, "secret", 1, true) and #commands == 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(lua, "-", path)
-	cmd.Stdin = strings.NewReader(script)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("action test failed: %v\n%s", err, output)
+	installed := filepath.Join(t.TempDir(), "rexpresence.lua")
+	executable := `C:\Apps\Rex "nightly"\rexpresence.exe`
+	if err := os.WriteFile(installed, palette.Module(executable), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for module, want := range map[string]string{path: os.Getenv("HOME") + "/.local/bin/rexpresence", installed: executable} {
+		cmd := exec.Command(lua, "-", module, want)
+		cmd.Stdin = strings.NewReader(script)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("action test for %s failed: %v\n%s", module, err, output)
+		}
 	}
 }

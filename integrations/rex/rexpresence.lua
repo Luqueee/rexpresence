@@ -1,4 +1,6 @@
+local installedExecutable = nil
 local function executablePath()
+  if installedExecutable then return installedExecutable end
   if os.getenv("OS") == "Windows_NT" then
     local base = os.getenv("LOCALAPPDATA")
     if not base or base == "" then error("LOCALAPPDATA is not set; cannot find rexpresence.", 0) end

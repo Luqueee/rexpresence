@@ -61,3 +61,8 @@ jobs:
       - name: Test Windows installer
         shell: powershell
         run: ./tests/install_windows_test.ps1
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: .go-version
+      - name: Test palette setup on Windows
+        run: go test ./tests -run 'Setup'

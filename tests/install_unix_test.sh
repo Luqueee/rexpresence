@@ -52,7 +52,6 @@ for platform in 'Linux x86_64 linux amd64' 'Linux aarch64 linux arm64' 'Darwin a
   cmp "$TEST_FIXTURES/$asset" "$HOME/.local/bin/rexpresence"
   [ -x "$HOME/.local/bin/rexpresence" ]
   grep -F 'export PATH="$HOME/.local/bin:$PATH"' "$testdir/output" >/dev/null
-  grep -F 'https://github.com/Luqueee/rexpresence#change-your-presence-from-rex' "$testdir/output" >/dev/null
 done
 
 printf 'existing installation\n' > "$HOME/.local/bin/rexpresence"

@@ -63,5 +63,5 @@ case ":${PATH:-}:" in
   *":$bin:"*) ;;
   *) printf '%s\n' 'Add this directory to PATH in your shell configuration:' '  export PATH="$HOME/.local/bin:$PATH"' ;;
 esac
-printf '%s\n' 'Run rexpresence when ready. For optional Rex palette setup, see https://github.com/Luqueee/rexpresence#change-your-presence-from-rex'
+printf '%s\n' 'Run rexpresence to start sharing. Run rexpresence setup to add the optional Rex palette actions.'
 )

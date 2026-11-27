@@ -30,6 +30,8 @@ Homebrew builds the tagged source. The PowerShell and curl commands execute the 
 
 Run `rexpresence` to start sharing. With Homebrew, update with `brew upgrade rexpresence`. The curl installer uses `~/.local/bin/rexpresence`; use that path if the directory isn't on `PATH`. The Windows installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
 
+To add the Discord actions to Rex's command palette, run **`rexpresence setup`** on the machine running Rex and Discord. It shows the files it would change. Press Enter to cancel or type `yes` to install. Setup does not start sharing or enable the login service.
+
 On a local Mac, run without arguments to follow the session selected in Rex. Pass `-session NAME` to pin a session instead. For a remote server, use `-server HOST` with the same host you would pass to `rex -S HOST ls`; specify `-session` if Rex cannot choose between sessions.
 
 The binary includes a public Discord Application ID. To use your own application, pass `-client-id` or set `DISCORD_CLIENT_ID`. The command-line flag takes precedence.
@@ -68,7 +70,9 @@ The equivalent CLI is `rexpresence card get FIELD`, `rexpresence card set FIELD 
 
 For a read-only preview in the terminal, use `rexpresence card preview line2 '{group}'`. An empty value previews hiding the field; omitting the value previews a reset. Preview uses the watcher's current mode and requires one running watcher. It does not need Discord to be connected.
 
-**Palette setup:** if you installed with Homebrew, use `$(brew --prefix rexpresence)/share/rexpresence/rexpresence.lua`; it points to the Homebrew binary even when the Rex app has a different `PATH`. Otherwise download `rexpresence.lua` from the same release as the binary. Copy the module next to your local Rex `init.lua`, add `require("rexpresence")`, and run `rex config reload`. Install it on the Rex server hosting the session; installing it only on a remote host will not control the local Discord app.
+`rexpresence setup` uses the local Rex configuration (`REX_CONFIG` if set), installs the bundled module next to it, validates the configuration and asks the running Rex server to reload it. Run it again after upgrading to update the actions; an unchanged installation is left alone. If Rex was closed during setup, open it to load the new configuration.
+
+Setup keeps a backup before replacing an existing palette module and refuses to replace a symlink. If you manage `init.lua` through a dotfiles symlink, point `REX_CONFIG` at the real file and use the same config path for the Rex server.
 
 ## Run at login on macOS
 

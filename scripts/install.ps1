@@ -58,7 +58,7 @@ try {
         return
     }
     Write-Host "Installed $destination. Run rexpresence when ready."
-    Write-Host 'Optional Rex palette setup: https://github.com/Luqueee/rexpresence#change-your-presence-from-rex'
+    Write-Host 'Run rexpresence setup to add the optional Rex palette actions.'
 } finally {
     if ([IO.File]::Exists($staged)) { [IO.File]::Delete($staged) }
     if ([IO.File]::Exists($sumsFile)) { [IO.File]::Delete($sumsFile) }
