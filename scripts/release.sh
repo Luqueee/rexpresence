@@ -3,6 +3,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 export GOTOOLCHAIN="go$(<.go-version)"
+version=${1:-}
+ldflags=()
+if [[ -n $version ]]; then
+  [[ "$version" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "Invalid release version: $version" >&2; exit 1; }
+  ldflags=(-ldflags "-X main.releaseVersion=$version")
+fi
 mkdir -p dist
 
 for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64; do
@@ -13,7 +19,7 @@ for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64; d
     name+=.exe
   fi
   CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
-    go build -trimpath -buildvcs=false -o "dist/$name" ./cmd/rexpresence
+    go build -trimpath -buildvcs=false "${ldflags[@]}" -o "dist/$name" ./cmd/rexpresence
 done
 cp integrations/rex/rexpresence.lua scripts/install.sh scripts/install.ps1 LICENSE dist/
 {

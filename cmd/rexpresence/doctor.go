@@ -47,7 +47,7 @@ func printExecutableChecks() {
 		fmt.Println("Binary: could not locate the running executable.")
 		return
 	}
-	fmt.Printf("Binary: running %q\n", executable)
+	fmt.Printf("Binary: running %q (%s)\n", executable, version())
 	preferred, err := exec.LookPath("rexpresence")
 	if err != nil {
 		fmt.Println("Binary: rexpresence does not resolve from PATH. Add its directory to PATH or use its full path.")
@@ -57,11 +57,9 @@ func printExecutableChecks() {
 	var dirs []string
 	if runtime.GOOS == "windows" {
 		name += ".exe"
-		if base := os.Getenv("LOCALAPPDATA"); base != "" {
-			dirs = append(dirs, filepath.Join(base, "Programs", "rexpresence"))
-		}
-	} else if home, err := os.UserHomeDir(); err == nil {
-		dirs = append(dirs, filepath.Join(home, ".local", "bin"))
+	}
+	if path := standalonePath(); path != "" {
+		dirs = append(dirs, filepath.Dir(path))
 	}
 	if runtime.GOOS == "darwin" {
 		dirs = append(dirs, "/opt/homebrew/opt/rexpresence/bin", "/usr/local/opt/rexpresence/bin")

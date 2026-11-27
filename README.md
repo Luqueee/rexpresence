@@ -88,6 +88,14 @@ Keep the binary in a permanent location such as `~/.local/bin/rexpresence`. Stop
 
 `install` accepts the same flags as a foreground run (e.g. `install -session work`). No `sudo` is needed. `status` distinguishes installation from a running watcher, names the session Rex actually selected, and reports whether Discord acknowledged the latest activity. An acknowledgement is not proof that other Discord users can see your profile.
 
+## Check for updates
+
+Run `rexpresence version` to print the version of the executable you opened. A source build reports `devel`; `rexpresence doctor` also shows its path.
+
+Run `rexpresence update` to update that installation. Homebrew builds delegate to `brew upgrade luqueee/tap/rexpresence`. The standalone installer location uses the latest stable GitHub release and verifies the binary against that release's `SHA256SUMS` before replacing it. It does not downgrade, rewrite settings, or restart the watcher. Restart a running watcher yourself after an update. On Windows, close the watcher and retry if it prevents replacement.
+
+If your current release predates these commands, rerun the installer you originally used once. For a development build or a standalone binary outside the installer location, rebuild or replace it manually.
+
 ## Troubleshooting
 
 Run `rexpresence doctor` to see which copy of the CLI you are running, which copy `PATH` selects when multiple installations are found, whether the **running local Rex server** loaded both Discord palette actions, and whether Discord's desktop IPC is reachable. It checks `PATH` and the standard installer and Homebrew locations; it does not run or compare the versions of other copies.
