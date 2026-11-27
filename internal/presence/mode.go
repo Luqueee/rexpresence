@@ -254,8 +254,15 @@ func ApplyMode(ctx context.Context, input <-chan *Activity, output chan<- *Activ
 			custom = &Activity{Custom: true, Details: next.Text, Started: time.Now().Unix()}
 		}
 		state = next
-		if state.Mode != reported {
-			reported = state.Mode
+		effective := state.Mode
+		if effective != "paused" && current != nil && current.SessionID != "" {
+			private, err := GroupPrivate(current.SessionID)
+			if err != nil || private {
+				effective = "private"
+			}
+		}
+		if effective != reported {
+			reported = effective
 			if report != nil {
 				report(reported)
 			}
@@ -267,7 +274,7 @@ func ApplyMode(ctx context.Context, input <-chan *Activity, output chan<- *Activ
 	reconcile := func() {
 		desired = nil
 		if current != nil {
-			switch state.Mode {
+			switch reported {
 			case "auto":
 				desired = current
 			case "custom":
@@ -301,6 +308,7 @@ func ApplyMode(ctx context.Context, input <-chan *Activity, output chan<- *Activ
 				return nil
 			}
 			current = p
+			refresh()
 			reconcile()
 		case <-ticker.C:
 			refresh()

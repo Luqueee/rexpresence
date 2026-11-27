@@ -81,7 +81,7 @@ esac
 				}
 				return nil
 			}
-			if p == nil || p.Details != want || p.Project != "public" || p.Started == 0 {
+			if p == nil || p.Details != want || p.SessionID != "s" || p.Project != "public" || p.Started == 0 {
 				t.Fatalf("activity = %#v, want %q", p, want)
 			}
 			return p
@@ -168,7 +168,7 @@ esac
 	}
 	connected := `{"connection_state":"connected","info":{"kind":"app"}}`
 	snapshot("session:a", "first", connected)
-	snapshot("session:b", "second", connected)
+	snapshot("session:b", "first", connected)
 	ctx, cancel := context.WithCancel(context.Background())
 	updates := make(chan *presence.Activity, 8)
 	done := make(chan error, 1)
@@ -209,7 +209,10 @@ esac
 	focus("session:a")
 	first := get("first")
 	focus("session:b")
-	second := get("second")
+	second := get("first")
+	if first.SessionID != "session:a" || second.SessionID != "session:b" {
+		t.Fatalf("same-label switch did not update session identity: %q → %q", first.SessionID, second.SessionID)
+	}
 	if second.Started != first.Started {
 		t.Fatal("switching groups reset the tool timer")
 	}

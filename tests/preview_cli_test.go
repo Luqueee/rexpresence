@@ -62,4 +62,9 @@ func TestCardPreviewCLI(t *testing.T) {
 	if got := preview("logo", "team-logo"); strings.Contains(got, "Literal") || strings.Contains(got, "team-logo") || !strings.HasPrefix(got, "Paused") {
 		t.Fatal(got)
 	}
+	live.Mode("private")
+	live.Activity(&presence.Activity{Details: "Sensitive tool", Group: "Sensitive group"}, "private-logo")
+	if got, want := preview("line2"), "Private group — nothing is shown\nTop line: Hidden\nBottom line: Hidden\nLogo: Hidden\nTimer: Hidden\n"; got != want {
+		t.Fatalf("private preview: %q", got)
+	}
 }

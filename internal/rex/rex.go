@@ -261,12 +261,12 @@ func Watch(ctx context.Context, server, session, project string, updates chan<- 
 			details := c.process(ctx, server, snapshot.ID, block)
 			started := time.Now().Unix()
 			if current != nil && current.Details == details {
-				if current.Group == snapshot.Label {
+				if current.SessionID == snapshot.ID && current.Group == snapshot.Label {
 					return nil
 				}
 				started = current.Started
 			}
-			current = &presence.Activity{Details: details, Group: snapshot.Label, Project: project, Started: started}
+			current = &presence.Activity{Details: details, Group: snapshot.Label, SessionID: snapshot.ID, Project: project, Started: started}
 		} else {
 			if current == nil {
 				return nil

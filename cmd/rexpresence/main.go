@@ -36,7 +36,7 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | version | update | doctor | setup [remove] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
 		flag.PrintDefaults()
 	}
 	switch command {
@@ -87,6 +87,27 @@ func main() {
 		}
 		check(presence.Resume())
 		fmt.Println("Previous presence restored")
+		return
+	case "group":
+		if len(args) != 2 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		switch args[0] {
+		case "get":
+			private, err := presence.GroupPrivate(args[1])
+			check(err)
+			if private {
+				fmt.Println("private")
+			} else {
+				fmt.Println("public")
+			}
+		case "hide", "show":
+			check(presence.SetGroupPrivate(args[1], args[0] == "hide"))
+		default:
+			flag.Usage()
+			os.Exit(2)
+		}
 		return
 	case "card":
 		check(cardCommand(args))
@@ -265,13 +286,15 @@ func previewCard(field string, value *string) error {
 		label = "Automatic"
 	case "paused":
 		label = "Paused — nothing is shown"
+	case "private":
+		label = "Private group — nothing is shown"
 	case "custom":
 		label = "Custom — automatic lines are not shown"
 	default:
 		return errors.New("watcher is not ready to preview")
 	}
 	top, bottom, logo, timer := "Hidden", "Hidden", "Hidden", "Hidden"
-	if p := s.Activity; p != nil && s.Mode != "paused" {
+	if p := s.Activity; p != nil && (s.Mode == "auto" || s.Mode == "custom") {
 		p.Card = &card // ReadSnapshot owns this copy; the watcher is untouched.
 		rendered := discord.Render(p, s.Logo)
 		top = cmp.Or(rendered.Details, top)
@@ -282,7 +305,7 @@ func previewCard(field string, value *string) error {
 		if rendered.Timestamps != nil {
 			timer = "Shown"
 		}
-	} else if s.Mode != "paused" {
+	} else if s.Mode == "auto" || s.Mode == "custom" {
 		label += " — no active pane"
 	}
 	_, err = fmt.Printf("%s\nTop line: %s\nBottom line: %s\nLogo: %s\nTimer: %s\n", label, top, bottom, logo, timer)

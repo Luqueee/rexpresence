@@ -40,6 +40,9 @@ rex = {
 dofile(arg[1])
 action = actions.discord_change_presence
 assert(action.name == "discord_change_presence")
+local actionCount = 0
+for _ in pairs(actions) do actionCount = actionCount + 1 end
+assert(actionCount == 2)
 assert(action.title == "Discord: Change Presence…")
 result, calls = { ok = true, code = 0 }, 0
 picked = "auto"
@@ -81,6 +84,59 @@ rex.ui.pick = function(prompt)
   return prompt.items[1].id
 end
 assert(action.run({}, {}).mode == "resume" and calls == 6)
+
+local groupCommands, groupChoice, groupPrompt, groupResult, groupMutationResult
+local session = "session:12345678-1234-1234-1234-123456789abc"
+local ctx = { session_id = session }
+rex.exec = function(argv)
+  assert(argv[1] == arg[2])
+  if argv[2] == "mode" and argv[3] == "remaining" then return { ok = true, stdout = remaining } end
+  assert(argv[2] == "group" and argv[4] == session and argv[5] == nil)
+  groupCommands[#groupCommands + 1] = argv[3]
+  if argv[3] == "get" then return groupResult end
+  assert(argv[3] == groupChoice)
+  return groupMutationResult
+end
+rex.ui = { pick = function(prompt)
+  groupPrompt = prompt
+  ctx.session_id = "session:changed"
+  if groupChoice == false then return nil, "cancelled" end
+  return groupChoice
+end }
+local function groupPick(state, choice)
+  ctx.session_id, groupCommands, groupChoice = session, {}, choice
+  groupMutationResult = { ok = true, code = 0 }
+  groupResult = state
+  return action.run(ctx, {})
+end
+local function privacyItem(id, title)
+  for _, item in ipairs(groupPrompt.items) do
+    if item.id == id then assert(item.title == title); return true end
+  end
+  return false
+end
+remaining = "0\n"
+assert(groupPick({ ok = true, stdout = "public\n" }, "hide").group == "hide")
+assert(privacyItem("hide", "Don't share this group"))
+assert(#groupCommands == 2 and groupCommands[1] == "get" and groupCommands[2] == "hide")
+remaining = "8\n"
+assert(groupPick({ ok = true, stdout = "private\n" }, "show").group == "show")
+assert(privacyItem("show", "Allow sharing this group") and groupPrompt.items[1].id == "resume")
+assert(#groupCommands == 2 and groupCommands[1] == "get" and groupCommands[2] == "show")
+assert(groupPick({ ok = true, stdout = "public\n" }, false) == nil and #groupCommands == 1)
+assert(groupPick({ ok = false, code = 1 }, false) == nil and #groupCommands == 1)
+assert(not privacyItem("hide", "Don't share this group") and not privacyItem("show", "Allow sharing this group"))
+assert(groupPick(nil, false) == nil and #groupCommands == 1)
+assert(groupPick({ ok = true, stdout = "unknown\n" }, false) == nil and #groupCommands == 1)
+groupResult, groupCommands, groupChoice, ctx.session_id = { ok = true, stdout = "public\n" }, {}, "hide", session
+groupMutationResult = { ok = false, code = 1, stderr = "secret" }
+ok, err = pcall(action.run, ctx, {})
+assert(not ok and not string.find(err, "secret", 1, true) and #groupCommands == 2)
+ctx.session_id, groupCommands, groupChoice = nil, {}, false
+assert(action.run(ctx, {}) == nil and #groupCommands == 0)
+assert(not privacyItem("hide", "Don't share this group") and not privacyItem("show", "Allow sharing this group"))
+ok = pcall(action.run, { session_id = session }, { mode = "hide" })
+assert(not ok and #groupCommands == 0)
 
 local card = actions.discord_configure_card
 assert(card and card.title == "Discord: Configure Card…")

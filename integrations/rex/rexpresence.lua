@@ -15,7 +15,7 @@ rex.action{
   name = "discord_change_presence",
   title = "Discord: Change Presence…",
   args = { mode = "string?", text = "string?" },
-  run = function(_, args)
+  run = function(ctx, args)
     local mode = args.mode
     local text = args.text
     local fallback = "Use rex do discord_change_presence mode=auto, mode=paused, mode=pause, mode=resume, or mode=custom text=TEXT."
@@ -33,6 +33,19 @@ rex.action{
         { id = "paused", title = "Pause indefinitely" },
       }
       local result = rex.exec({ executable, "mode", "remaining" })
+      local sessionID = ctx and ctx.session_id
+      local groupAction
+      if type(sessionID) == "string" and sessionID ~= "" then
+        local group = rex.exec({ executable, "group", "get", sessionID })
+        local state = group and group.ok and (group.stdout or ""):match("^%s*(%a+)%s*$")
+        if state == "public" or state == "private" then
+          groupAction = state == "public" and "hide" or "show"
+          table.insert(items, {
+            id = groupAction,
+            title = groupAction == "hide" and "Don't share this group" or "Allow sharing this group",
+          })
+        end
+      end
       local minutes = result and result.ok and tonumber(result.stdout)
       if minutes and minutes > 0 then
         title = "Paused · " .. minutes .. " min left"
@@ -43,6 +56,12 @@ rex.action{
       if mode == nil then
         if why == "cancelled" then return end
         error("Could not choose Discord presence: " .. (why or "unknown error") .. ". " .. fallback, 0)
+      end
+      if groupAction and mode == groupAction then
+        local changed = rex.exec({ executable, "group", groupAction, sessionID })
+        if not changed then error("Could not start rexpresence; check the binary is installed.", 0) end
+        if not changed.ok then error("rexpresence group failed (exit " .. tostring(changed.code) .. ").", 0) end
+        return { group = groupAction }
       end
     end
 
