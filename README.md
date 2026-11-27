@@ -88,6 +88,12 @@ Keep the binary in a permanent location such as `~/.local/bin/rexpresence`. Stop
 
 `install` accepts the same flags as a foreground run (e.g. `install -session work`). No `sudo` is needed. `status` distinguishes installation from a running watcher, names the session Rex actually selected, and reports whether Discord acknowledged the latest activity. An acknowledgement is not proof that other Discord users can see your profile.
 
+## Troubleshooting
+
+Run `rexpresence doctor` to see which copy of the CLI you are running, which copy `PATH` selects when multiple installations are found, whether the **running local Rex server** loaded both Discord palette actions, and whether Discord's desktop IPC is reachable. It checks `PATH` and the standard installer and Homebrew locations; it does not run or compare the versions of other copies.
+
+`doctor` does not edit files, start services, reload Rex, or send or clear Discord activity. A reachable socket does not prove Discord accepted or is showing your presence; use `rexpresence status` to check the watcher's last acknowledgement. `doctor` exits with status 1 if either connection check fails. The palette and a single installation are optional.
+
 ## Development
 
 `cmd/rexpresence` contains the CLI. `internal/rex` watches the focused pane; `internal/discord` manages the IPC connection. Run the black-box tests in `tests/` with `go test ./tests`.

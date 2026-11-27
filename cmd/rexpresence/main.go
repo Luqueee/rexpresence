@@ -36,10 +36,17 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | setup [remove] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | doctor | setup [remove] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
 		flag.PrintDefaults()
 	}
 	switch command {
+	case "doctor":
+		if len(args) != 0 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		check(doctor())
+		return
 	case "setup":
 		remove := len(args) == 1 && args[0] == "remove"
 		if len(args) != 0 && !remove {
