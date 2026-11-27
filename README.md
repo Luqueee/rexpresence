@@ -4,7 +4,11 @@
 
 Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on Discord, change the card from Rex's command palette, or pause sharing. The group is the label of the Rex session containing the focused pane, not the terminal title. This is an independent integration, not an official Rex or Discord product.
 
-![Rex with Demo Project selected beside the Discord Rich Presence card for the same group](docs/screenshots/rex-discord.png)
+## Demo
+
+[![Demo: the Rex group appears on Discord, pauses from the command palette, and returns when sharing resumes](docs/demo/preview.webp)](docs/demo/rexpresence.mp4)
+
+[Download the full demo (MP4, 1080p, 23 seconds)](https://github.com/Luqueee/rexpresence/raw/refs/heads/main/docs/demo/rexpresence.mp4).
 
 ## Quick start
 
