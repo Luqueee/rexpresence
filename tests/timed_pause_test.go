@@ -29,8 +29,11 @@ func TestModeTimedPause(t *testing.T) {
 			}
 			set(tc.original, "my text")
 			start := time.Now()
-			set("pause-15m", "")
-			set("pause-15m", "") // Extending a pause must not lose its original mode.
+			for range 2 { // Extending a pause must not lose its original mode.
+				if err := presence.Pause(15 * time.Minute); err != nil {
+					t.Fatal(err)
+				}
+			}
 			path := filepath.Join(home, ".rexpresence", "mode")
 			data, err := os.ReadFile(path)
 			if err != nil {
@@ -104,8 +107,10 @@ func TestModeResumeNow(t *testing.T) {
 	for _, mode := range []string{"auto", "custom"} {
 		set(mode, "my saved text")
 		left(0)
-		set("pause-15m", "")
-		left(15)
+		if err := presence.Pause(30 * time.Minute); err != nil {
+			t.Fatal(err)
+		}
+		left(30)
 		if err := presence.Resume(); err != nil {
 			t.Fatal(err)
 		}
@@ -122,7 +127,9 @@ func TestModeResumeNow(t *testing.T) {
 			}
 		}
 	}
-	set("pause-15m", "")
+	if err := presence.Pause(time.Hour); err != nil {
+		t.Fatal(err)
+	}
 	set("paused", "")
 	left(0)
 	if err := presence.Resume(); err == nil {

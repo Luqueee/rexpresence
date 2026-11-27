@@ -1,3 +1,14 @@
+local function executablePath()
+  if os.getenv("OS") == "Windows_NT" then
+    local base = os.getenv("LOCALAPPDATA")
+    if not base or base == "" then error("LOCALAPPDATA is not set; cannot find rexpresence.", 0) end
+    return base .. "\\Programs\\rexpresence\\rexpresence.exe"
+  end
+  local home = os.getenv("HOME")
+  if not home or home == "" then error("HOME is not set; cannot find rexpresence.", 0) end
+  return home .. "/.local/bin/rexpresence"
+end
+
 rex.action{
   name = "discord_change_presence",
   title = "Discord: Change Presence…",
@@ -5,10 +16,8 @@ rex.action{
   run = function(_, args)
     local mode = args.mode
     local text = args.text
-    local fallback = "Use rex do discord_change_presence mode=auto, mode=paused, mode=pause-15m, mode=resume, or mode=custom text=TEXT."
-    local home = os.getenv("HOME")
-    if not home or home == "" then error("HOME is not set; cannot find rexpresence.", 0) end
-    local executable = home .. "/.local/bin/rexpresence"
+    local fallback = "Use rex do discord_change_presence mode=auto, mode=paused, mode=pause, mode=resume, or mode=custom text=TEXT."
+    local executable = executablePath()
 
     if mode == nil then
       if not rex.ui or not rex.ui.pick then
@@ -18,7 +27,7 @@ rex.action{
       local items = {
         { id = "auto", title = "Automatic" },
         { id = "custom", title = "Custom public text" },
-        { id = "pause-15m", title = "Pause for 15 minutes", subtitle = "Then return to your current presence" },
+        { id = "pause", title = "Pause for 15 minutes", subtitle = "Then return to your current presence" },
         { id = "paused", title = "Pause indefinitely" },
       }
       local result = rex.exec({ executable, "mode", "remaining" })
@@ -35,7 +44,7 @@ rex.action{
       end
     end
 
-    if mode ~= "auto" and mode ~= "custom" and mode ~= "paused" and mode ~= "pause-15m" and mode ~= "resume" then
+    if mode ~= "auto" and mode ~= "custom" and mode ~= "paused" and mode ~= "pause" and mode ~= "resume" then
       error("Invalid presence mode. " .. fallback, 0)
     end
     if mode == "custom" and text == nil then
@@ -54,10 +63,11 @@ rex.action{
     end
 
     local argv = { executable, "mode", mode }
+    if mode == "pause" or mode == "resume" then argv = { executable, mode } end
     if mode == "custom" then argv[4] = text end
     local result = rex.exec(argv)
-    if result == nil then error("Could not start rexpresence; check that ~/.local/bin/rexpresence is installed.", 0) end
-    if not result.ok and mode == "pause-15m" and (result.stderr or ""):find("already paused indefinitely", 1, true) then
+    if result == nil then error("Could not start rexpresence; check the binary is installed.", 0) end
+    if not result.ok and mode == "pause" and (result.stderr or ""):find("already paused indefinitely", 1, true) then
       error("Already paused indefinitely. Choose Automatic or Custom public text to resume.", 0)
     end
     if not result.ok and mode == "resume" and (result.stderr or ""):find("no active timed pause", 1, true) then
@@ -99,12 +109,10 @@ rex.action{
     if field ~= "line1" and field ~= "line2" and field ~= "logo" and field ~= "timer" then
       error("Invalid card field. " .. fallback, 0)
     end
-    local home = os.getenv("HOME")
-    if not home or home == "" then error("HOME is not set; cannot find rexpresence.", 0) end
-    local executable = home .. "/.local/bin/rexpresence"
+    local executable = executablePath()
     local function run(argv)
       local result = rex.exec(argv)
-      if result == nil then error("Could not start rexpresence; check that ~/.local/bin/rexpresence is installed.", 0) end
+      if result == nil then error("Could not start rexpresence; check the binary is installed.", 0) end
       if not result.ok then error("rexpresence card command failed (exit " .. tostring(result.code) .. ").", 0) end
       return result
     end

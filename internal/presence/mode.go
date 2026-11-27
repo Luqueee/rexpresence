@@ -56,7 +56,7 @@ func validText(text string) bool {
 
 // SetMode atomically changes the per-user presence mode.
 func SetMode(mode, text string) error {
-	if mode != "auto" && mode != "custom" && mode != "paused" && mode != "pause-15m" {
+	if mode != "auto" && mode != "custom" && mode != "paused" {
 		return errors.New("invalid presence mode")
 	}
 	if mode == "custom" {
@@ -70,43 +70,52 @@ func SetMode(mode, text string) error {
 	} else {
 		text = ""
 	}
+	return saveMode(modeState{Mode: mode, Text: text})
+}
+
+// Pause hides the current presence for d, preserving its mode and custom text.
+func Pause(d time.Duration) error {
+	if d < time.Millisecond {
+		return errors.New("pause duration must be at least 1ms (for example, 30m or 1h)")
+	}
+	prior, err := currentMode()
+	if err != nil {
+		return err
+	}
+	if prior.Mode == "paused" {
+		return errors.New("already paused indefinitely")
+	}
+	resume := prior.Mode
+	if resume == "pause-15m" {
+		resume = prior.Resume
+	}
+	// Keep the existing on-disk discriminator so installed watchers honor the deadline.
+	return saveMode(modeState{Mode: "pause-15m", Resume: resume, Text: prior.Text, Until: time.Now().Add(d).UnixMilli()})
+}
+
+func saveMode(state modeState) error {
 	path, err := modePath()
 	if err != nil {
 		return err
 	}
 	dir := filepath.Dir(path)
-	if mode != "auto" {
+	if state.Mode != "auto" {
 		if err := os.Mkdir(dir, 0700); err != nil && !errors.Is(err, os.ErrExist) {
 			return err
 		}
 	}
 	if err := privateDirectory(dir); err != nil {
-		if mode == "auto" && errors.Is(err, os.ErrNotExist) {
+		if state.Mode == "auto" && errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return err
 	}
-	if mode == "auto" {
+	if state.Mode == "auto" {
 		err = os.Remove(path)
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return err
-	}
-	state := modeState{Mode: mode, Text: text}
-	if mode == "pause-15m" {
-		prior, err := readMode(path)
-		if err != nil {
-			return err
-		}
-		if prior.Mode == "paused" {
-			return errors.New("already paused indefinitely")
-		}
-		state.Resume, state.Text = prior.Mode, prior.Text
-		if prior.Mode == "pause-15m" {
-			state.Resume = prior.Resume
-		}
-		state.Until = time.Now().Add(15 * time.Minute).UnixMilli()
 	}
 	data, err := json.Marshal(state)
 	if err != nil {

@@ -49,3 +49,15 @@ jobs:
         run: go vet ./...
       - name: Test
         run: go test -race -count=1 ./...
+      - name: Test Unix installer
+        run: sh tests/install_unix_test.sh
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test Windows installer
+        shell: powershell
+        run: ./tests/install_windows_test.ps1

@@ -25,9 +25,12 @@ rex = {
     if argv[3] == "remaining" then return { ok = true, stdout = remaining } end
     calls = calls + 1
     assert(argv[1] == os.getenv("HOME") .. "/.local/bin/rexpresence")
-    assert(argv[2] == "mode")
-    assert(argv[3] == picked)
-    if picked == "custom" then assert(argv[4] == input) else assert(argv[4] == nil) end
+    if picked == "pause" or picked == "resume" then
+      assert(argv[2] == picked and argv[3] == nil)
+    else
+      assert(argv[2] == "mode" and argv[3] == picked)
+      if picked == "custom" then assert(argv[4] == input) else assert(argv[4] == nil) end
+    end
     return result
   end }),
 }
@@ -62,13 +65,13 @@ picked, input = "custom", "secret"
 result = { ok = false, code = 1, stderr = "secret" }
 ok, err = pcall(action.run, {}, { mode = "custom", text = input })
 assert(not ok and not string.find(err, "secret", 1, true) and calls == 4)
-result, picked = { ok = true, code = 0 }, "pause-15m"
+result, picked = { ok = true, code = 0 }, "pause"
 rex.ui = { pick = function(prompt)
   assert(prompt.title == "Discord presence")
   for _, item in ipairs(prompt.items) do assert(item.id ~= "resume") end
   for _, item in ipairs(prompt.items) do if item.id == picked then return picked end end
 end }
-assert(action.run({}, {}).mode == "pause-15m" and calls == 5)
+assert(action.run({}, {}).mode == "pause" and calls == 5)
 remaining, picked = "8\n", "resume"
 rex.ui.pick = function(prompt)
   assert(prompt.title == "Paused · 8 min left" and prompt.items[1].id == "resume")

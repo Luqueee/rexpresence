@@ -47,6 +47,8 @@ jobs:
             dist/rexpresence-linux-amd64
             dist/rexpresence-windows-amd64.exe
             dist/rexpresence.lua
+            dist/install.sh
+            dist/install.ps1
             dist/LICENSE
             dist/THIRD_PARTY_NOTICES.txt
             dist/SHA256SUMS
@@ -74,7 +76,7 @@ jobs:
           sha256sum --check SHA256SUMS
           assets=(rexpresence-darwin-arm64 rexpresence-darwin-amd64
                   rexpresence-linux-arm64 rexpresence-linux-amd64
-                  rexpresence-windows-amd64.exe rexpresence.lua LICENSE THIRD_PARTY_NOTICES.txt SHA256SUMS)
+                  rexpresence-windows-amd64.exe rexpresence.lua install.sh install.ps1 LICENSE THIRD_PARTY_NOTICES.txt SHA256SUMS)
           if draft=$(gh release view "$TAG" --json isDraft --jq .isDraft); then
             if [[ "$draft" != true ]]; then
               echo "Release $TAG is already published; leaving it unchanged."

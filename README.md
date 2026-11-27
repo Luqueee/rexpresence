@@ -6,22 +6,23 @@ Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on D
 
 ## Quick start
 
-1. Open Rex and the Discord desktop app. On macOS, `rexpresence` uses `rex` from `PATH` if available. Otherwise, it looks inside **Rex.app** and **Rex Beta.app** in `/Applications` and `~/Applications`. On other systems, `rex` must be on `PATH`.
-2. Build with Go 1.23 or later and run:
+Open Rex and the Discord desktop app. On macOS, `rexpresence` can use the CLI bundled with **Rex.app** or **Rex Beta.app**. On Linux and Windows, put `rex` on `PATH`.
 
-   ```sh
-   go build -o rexpresence ./cmd/rexpresence
-   ./rexpresence
-   ```
-
-Once a version is tagged, [GitHub Releases](https://github.com/Luqueee/rexpresence/releases) provides binaries for macOS and Linux (ARM64 and x86-64), and Windows (x86-64). Download the binary for your OS and architecture and compare its SHA-256 with `SHA256SUMS` from the same release. On an Apple Silicon Mac, for example:
+**macOS or Linux** (ARM64 or x86-64):
 
 ```sh
-shasum -a 256 rexpresence-darwin-arm64
-mkdir -p ~/.local/bin
-install -m 755 rexpresence-darwin-arm64 ~/.local/bin/rexpresence
-~/.local/bin/rexpresence
+curl -fsSL --proto '=https' https://github.com/Luqueee/rexpresence/releases/latest/download/install.sh | sh
 ```
+
+**Windows x64** (PowerShell):
+
+```powershell
+& ([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://github.com/Luqueee/rexpresence/releases/latest/download/install.ps1')))
+```
+
+Both commands execute the project's installer and verify the binary against the release's SHA-256 manifest before replacing it. No Go installation, administrator access, or automatic start is required. To avoid executing a downloaded script, install the binary manually from [GitHub Releases](https://github.com/Luqueee/rexpresence/releases) and check it against `SHA256SUMS`.
+
+Run `rexpresence` to start sharing. On Unix the binary is `~/.local/bin/rexpresence`; use that path if the directory isn't on `PATH`. On Windows it is `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`. See **Palette setup** below to add the optional Rex actions.
 
 On a local Mac, run without arguments to follow the session selected in Rex. Pass `-session NAME` to pin a session instead. For a remote server, use `-server HOST` with the same host you would pass to `rex -S HOST ls`; specify `-session` if Rex cannot choose between sessions.
 
@@ -43,9 +44,10 @@ The same controls are available in the terminal:
 
 ```sh
 rexpresence mode custom "Reviewing a pull request"
-rexpresence mode pause-15m
+rexpresence pause           # 15 minutes
+rexpresence pause 30m       # or 1h, 1h30m, etc.
 rexpresence mode remaining  # minutes left; 0 when there is no active timed pause
-rexpresence mode resume     # restore the saved automatic or custom mode now
+rexpresence resume          # restore the saved automatic or custom mode now
 rexpresence mode paused
 rexpresence mode auto
 ```
@@ -60,7 +62,7 @@ The equivalent CLI is `rexpresence card get FIELD`, `rexpresence card set FIELD 
 
 For a read-only preview in the terminal, use `rexpresence card preview line2 '{group}'`. An empty value previews hiding the field; omitting the value previews a reset. Preview uses the watcher's current mode and requires one running watcher. It does not need Discord to be connected.
 
-**Palette setup:** keep the binary at `~/.local/bin/rexpresence`. Copy [`integrations/rex/rexpresence.lua`](integrations/rex/rexpresence.lua) next to your local Rex `init.lua`, add `require("rexpresence")` to that file, and run `rex config reload`. This action runs on the Rex server hosting the session; installing it on a remote host does not control the Mac.
+**Palette setup:** download `rexpresence.lua` from the same release as the binary. Copy it next to your local Rex `init.lua`, add `require("rexpresence")` to that file, and run `rex config reload`. The action uses the installer's per-user binary path on each OS. Install it on the Rex server hosting the session; installing it only on a remote host will not control the local Discord app.
 
 ## Run at login on macOS
 
@@ -77,6 +79,8 @@ Keep the binary in a permanent location such as `~/.local/bin/rexpresence`. Stop
 ## Development
 
 `cmd/rexpresence` contains the CLI. `internal/rex` watches the focused pane; `internal/discord` manages the IPC connection. Run the black-box tests in `tests/` with `go test ./tests`.
+
+To build from source instead of installing a release, use `go build -o rexpresence ./cmd/rexpresence` (on Windows, `-o rexpresence.exe`).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for local checks, bug reports, and the tag-based release process.
 

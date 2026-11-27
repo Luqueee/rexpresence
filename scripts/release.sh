@@ -15,7 +15,7 @@ for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64; d
   CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
     go build -trimpath -buildvcs=false -o "dist/$name" ./cmd/rexpresence
 done
-cp integrations/rex/rexpresence.lua LICENSE dist/
+cp integrations/rex/rexpresence.lua scripts/install.sh scripts/install.ps1 LICENSE dist/
 {
   printf '%s\n\n' 'Go standard library and runtime'
   cat "$(go env GOROOT)/LICENSE"
@@ -28,5 +28,5 @@ cp integrations/rex/rexpresence.lua LICENSE dist/
   cd dist
   sha256sum rexpresence-darwin-arm64 rexpresence-darwin-amd64 \
     rexpresence-linux-arm64 rexpresence-linux-amd64 \
-    rexpresence-windows-amd64.exe rexpresence.lua LICENSE THIRD_PARTY_NOTICES.txt > SHA256SUMS
+    rexpresence-windows-amd64.exe rexpresence.lua install.sh install.ps1 LICENSE THIRD_PARTY_NOTICES.txt > SHA256SUMS
 )

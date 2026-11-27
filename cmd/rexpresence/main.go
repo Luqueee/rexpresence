@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unicode"
 
 	"rexpresence/internal/autostart"
@@ -30,10 +31,32 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | install [flags] | uninstall | status | mode auto|paused|pause-15m|remaining|resume|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence [flags] | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]")
 		flag.PrintDefaults()
 	}
 	switch command {
+	case "pause":
+		d := 15 * time.Minute
+		if len(args) > 1 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		if len(args) == 1 {
+			var err error
+			d, err = time.ParseDuration(args[0])
+			check(err)
+		}
+		check(presence.Pause(d))
+		fmt.Println("Presence paused for", d)
+		return
+	case "resume":
+		if len(args) != 0 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		check(presence.Resume())
+		fmt.Println("Previous presence restored")
+		return
 	case "card":
 		check(cardCommand(args))
 		return
@@ -42,15 +65,10 @@ func main() {
 			flag.Usage()
 			os.Exit(2)
 		}
-		switch args[0] {
-		case "remaining":
+		if args[0] == "remaining" {
 			minutes, err := presence.PauseMinutes()
 			check(err)
 			fmt.Println(minutes)
-			return
-		case "resume":
-			check(presence.Resume())
-			fmt.Println("Previous presence restored")
 			return
 		}
 		var text string

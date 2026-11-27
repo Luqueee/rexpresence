@@ -14,6 +14,8 @@ TMPDIR=/tmp go test -race -count=1 ./tests
 
 Keep black-box tests in `tests/`, separate from the implementation. CI runs them on Linux and macOS; the macOS job also exercises session following and LaunchAgent behavior. The tests use local fixtures, not your Discord profile.
 
+Run `sh tests/install_unix_test.sh` on Linux or macOS and `.\tests\install_windows_test.ps1` in Windows PowerShell. These installer tests use local download fixtures and never launch Discord or Rex.
+
 ## Releases (maintainers)
 
 Merge the changes you want to release into `main` and wait for CI. To publish, push a new `vMAJOR.MINOR.PATCH` tag at the tested commit. No tag is needed for a normal pull request or push. The release workflow reruns CI on the tag, cross-compiles the standalone binaries, and publishes them with the Rex Lua action, license notices, and `SHA256SUMS`. It does not deploy anything to users' machines. Do not reuse a published tag.
