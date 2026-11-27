@@ -59,12 +59,13 @@ You can also use the terminal:
 rexpresence pause 30m    # hide your activity for 30 minutes
 rexpresence resume       # end a timed pause early
 rexpresence status       # see what the watcher is doing
+rexpresence stop         # stop the background watcher
 ```
 
 ## Common tasks
 
 - **Start at login (macOS):** run `rexpresence install`. To stop the login service and disable login startup, run `rexpresence uninstall`.
-- **Update:** run `rexpresence update`, restart the watcher, and rerun `rexpresence setup` if you use the Rex menu.
+- **Update:** run `rexpresence update`, then `rexpresence stop` and `rexpresence -d` to restart the watcher. Rerun `rexpresence setup` if you use the Rex menu.
 - **Nothing on Discord?** Keep both desktop apps open. Run `rexpresence doctor` to check the connections, then `rexpresence status` to see whether Discord accepted the activity.
 - **Command not found?** The shell installer puts the binary at `~/.local/bin/rexpresence`. On Windows, the installer uses `%LOCALAPPDATA%\Programs\rexpresence\rexpresence.exe`.
 - **Homebrew warns about `PATH` shadowing?** Another copy may run first. Use `"$(brew --prefix rexpresence)/bin/rexpresence" doctor` to check which one your shell selects.

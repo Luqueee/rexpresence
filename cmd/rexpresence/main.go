@@ -36,7 +36,7 @@ func main() {
 		command, args = args[0], args[1:]
 	}
 	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence run [-d] [flags] | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]\n-d runs the watcher in the background; without it, run stays in the foreground.")
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage: rexpresence run [-d] [flags] | stop | version | update | doctor | setup [remove] | group get|hide|show SESSION_ID | pause [DURATION] | resume | install [flags] | uninstall | status | mode auto|paused|remaining|custom TEXT | card get|reset FIELD | card set FIELD VALUE | card preview FIELD [VALUE]\n-d runs the watcher in the background; without it, run stays in the foreground.")
 		flag.PrintDefaults()
 	}
 	switch command {
@@ -129,6 +129,13 @@ func main() {
 		}
 		check(presence.SetMode(args[0], text))
 		fmt.Println("Presence mode saved:", args[0])
+		return
+	case "stop":
+		if len(args) != 0 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		check(stopWatchers())
 		return
 	case "status", "uninstall":
 		if len(args) != 0 {

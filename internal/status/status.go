@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -188,6 +189,45 @@ func Print(w io.Writer) error {
 		return err
 	}
 	return nil
+}
+
+// PIDs returns the processes of running watchers, found by their live sockets.
+func PIDs() ([]int, error) {
+	dir, err := directory()
+	if err != nil {
+		return nil, err
+	}
+	info, err := os.Lstat(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil || !info.IsDir() || (runtime.GOOS != "windows" && info.Mode().Perm()&0077 != 0) {
+		return nil, errors.New("status directory must be private")
+	}
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var pids []int
+	for _, entry := range entries {
+		if entry.Type()&os.ModeSocket == 0 || filepath.Ext(entry.Name()) != ".sock" {
+			continue
+		}
+		pid, err := strconv.Atoi(strings.TrimSuffix(entry.Name(), ".sock"))
+		if err != nil || pid <= 0 {
+			continue
+		}
+		conn, err := net.DialTimeout("unix", filepath.Join(dir, entry.Name()), time.Second)
+		if err != nil {
+			continue
+		}
+		conn.Close()
+		pids = append(pids, pid)
+	}
+	return pids, nil
 }
 
 // ReadSnapshot queries exactly one live watcher without persisting its activity.
