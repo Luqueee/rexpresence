@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate stable version tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+
+  ci:
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: .go-version
+      - run: bash scripts/release.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: |
+            dist/rexpresence-darwin-arm64
+            dist/rexpresence-darwin-amd64
+            dist/rexpresence-linux-arm64
+            dist/rexpresence-linux-amd64
+            dist/rexpresence-windows-amd64.exe
+            dist/rexpresence.lua
+            dist/LICENSE
+            dist/THIRD_PARTY_NOTICES.txt
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: dist
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum --check SHA256SUMS
+          assets=(rexpresence-darwin-arm64 rexpresence-darwin-amd64
+                  rexpresence-linux-arm64 rexpresence-linux-amd64
+                  rexpresence-windows-amd64.exe rexpresence.lua LICENSE THIRD_PARTY_NOTICES.txt SHA256SUMS)
+          if draft=$(gh release view "$TAG" --json isDraft --jq .isDraft); then
+            if [[ "$draft" != true ]]; then
+              echo "Release $TAG is already published; leaving it unchanged."
+              exit 0
+            fi
+          else
+            gh release create "$TAG" --draft --verify-tag --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" "${assets[@]}" --clobber
+          diff -u <(printf '%s\n' "${assets[@]}" | sort) \
+            <(gh release view "$TAG" --json assets --jq '.assets[].name' | sort)
+          gh release edit "$TAG" --draft=false

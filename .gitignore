@@ -1,0 +1,10 @@
+/rexpresence
+/rexpresence.exe
+/dist/
+*.test
+coverage.out
+.DS_Store
+.vscode/
+.env
+.env.*
+.rexpresence/
