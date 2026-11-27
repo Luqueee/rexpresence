@@ -4,6 +4,8 @@
 
 Show your foreground tool and [Rex](https://www.superlogical.com/rex) group on Discord, change the card from Rex's command palette, or pause sharing. The group is the label of the Rex session containing the focused pane, not the terminal title. This is an independent integration, not an official Rex or Discord product.
 
+![Rex with Demo Project selected beside the Discord Rich Presence card for the same group](docs/screenshots/rex-discord.png)
+
 ## Quick start
 
 Open Rex and the Discord desktop app. On macOS, `rexpresence` can use the CLI bundled with **Rex.app** or **Rex Beta.app**. On Linux and Windows, put `rex` on `PATH`.
@@ -46,7 +48,11 @@ Local Mac selection is checked every three seconds. If Discord restarts, the cur
 
 Open the **local Mac session** in Rex, open its command palette and choose **Discord: Change Presence…**. **Automatic** shows the tool and the session label. **Custom public text** shows only what you enter, without the group. **Pause for 15 minutes** hides the activity and then restores the previous mode, including any custom text. Choosing it again starts a fresh 15 minutes. Changing mode manually cancels the deadline. **Pause indefinitely** stays paused until you explicitly choose a public mode. Canceling the picker changes nothing.
 
+![Rex command palette showing Discord: Configure Card and Discord: Change Presence](docs/screenshots/rex-commands.png)
+
 During a timed pause, reopening the menu shows the minutes left (rounded up). **Resume now** restores the previous mode immediately without asking for your custom text again. Neither the countdown nor this option appears during an indefinite pause.
+
+![Rex presence picker showing 15 minutes left and the Resume now option](docs/screenshots/rex-paused.png)
 
 The same controls are available in the terminal:
 
@@ -64,9 +70,13 @@ The setting is private to your OS account, applies to all its watchers, and surv
 
 **Keep a group private:** in **Discord: Change Presence…**, choose **Don't share this group**. It clears the entire Discord activity for that Rex session, even in Custom mode. When the watcher follows you to a public session, your chosen mode still applies, including any manual or timed pause. Choose **Allow sharing this group** to remove the privacy rule without resuming a pause.
 
+![Discord presence picker with the Don't share this group option](docs/screenshots/rex-privacy.png)
+
 Privacy applies to this OS account, survives restarts and renaming the Rex session, and does not apply to a different session with the same label. You can set it before starting the watcher: `rexpresence group hide SESSION_ID` (full ID from `rex ls --json`). Use `group get SESSION_ID` to check it or `group show SESSION_ID` to allow sharing again. After upgrading, restart any running watcher and run `rexpresence setup` again to install the updated menu.
 
 **Edit the card:** press **Cmd+Shift+P → Discord: Configure Card…**. To show just your Rex group, choose **Bottom line → Rex group name**. Read the result under **Apply change**, then select it to save. **Back** lets you try another option; **Esc** cancels. The preview shows the selected field in the watcher's current mode; it sends nothing to Discord. Changes take effect within about a second after applying, persist across logins, and do not switch modes. **Hide this line** omits a line; **Restore default** resets only the selected field. Discord controls the application name and may display a placeholder when no image is sent.
+
+![Rex preview showing Demo Project on the bottom line before applying the change](docs/screenshots/rex-card.png)
 
 Choose **Custom text or template…** to enter your own wording. Use literal text or placeholders: `{tool}` (foreground tool), `{group}` (session label), `{project}` (explicit project alias), or `{activity}` (tool plus alias if set). For example, `In {group}` adds a prefix. A line that depends on an unavailable value is omitted. Automatic templates never expand in custom mode; logo and timer preferences apply to both modes.
 
