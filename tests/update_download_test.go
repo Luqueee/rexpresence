@@ -53,7 +53,11 @@ func TestDownloadRelease(t *testing.T) {
 			defer server.Close()
 			var dst bytes.Buffer
 			latest, newer, err := update.Download(context.Background(), server.Client(), server.URL+"/owner/repo/releases", tc.current, asset, &dst)
-			if (err != nil) != tc.wantError || newer != tc.wantNew || latest != tc.tag {
+			wantTag := tc.tag
+			if tc.name == "prerelease" {
+				wantTag = ""
+			}
+			if (err != nil) != tc.wantError || newer != tc.wantNew || latest != wantTag {
 				t.Fatalf("latest=%q newer=%v err=%v", latest, newer, err)
 			}
 			if len(paths) != tc.wantRequests {

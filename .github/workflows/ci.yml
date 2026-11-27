@@ -65,4 +65,4 @@ jobs:
         with:
           go-version-file: .go-version
       - name: Test palette setup and updates on Windows
-        run: go test ./tests -run 'Setup|Update|Version'
+        run: go test ./tests -run 'Setup|Update|Version|Download'
